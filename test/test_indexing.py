@@ -2080,6 +2080,18 @@ class TestIndexingDevice(TestCase):
                     y_nd = torch.index_add(x, dim, index, src, alpha=alpha)
                     self.assertEqual(y_nd, y0, atol=1e-3, rtol=1e-5)
 
+        # gh-203006: bool used to fail on CUDA in deterministic mode because
+        # source * alpha promoted the values to int64
+        for dim in range(3):
+            x, index, src = self._prepare_data_for_index_copy_and_add_deterministic(dim, device)
+            x, src = x.bool(), src > 0.5
+            for alpha in (1, 0, 2):
+                with DeterministicGuard(False):
+                    expected = torch.index_add(x, dim, index, src, alpha=alpha)
+                with DeterministicGuard(True):
+                    for _ in range(3):
+                        self.assertEqual(torch.index_add(x, dim, index, src, alpha=alpha), expected, atol=0, rtol=0)
+
     @onlyNativeDeviceTypes
     def test_index_put_non_accumulate_deterministic(self, device) -> None:
         with DeterministicGuard(True):

@@ -2979,6 +2979,7 @@ class TestSparseCSR(TestCase):
             self.assertEqual(sparse_input.grad, dense_input.grad)
 
     @dtypes(torch.float64)
+    @deterministiconoff
     def test_autograd_dense_output_addmm(self, device, dtype):
         from torch.testing._internal.common_methods_invocations import sample_inputs_addmm
 

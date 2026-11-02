@@ -1161,7 +1161,10 @@ void index_add_cuda_impl(const Tensor& self, int64_t dim, const Tensor& index, c
       indices.emplace_back();
     }
     indices.emplace_back(index.to(at::kLong));
-    result.index_put_(indices, source * alpha, true);
+    // source * alpha promotes a bool source to int64, which the sort-based
+    // index_put_ rejects; keep the values in the dtype of result (gh-203006)
+    const Tensor values = alpha.equal(1) ? source : (source * alpha).to(result.scalar_type());
+    result.index_put_(indices, values, true);
     return;
   }
 
